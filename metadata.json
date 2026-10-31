@@ -1,0 +1,8 @@
+{
+  "name": "CALISPONYO — Tecnología que Emerge",
+  "description": "Experiencia interactiva de descenso continuo y gemelo digital 3D de la Escalera al Cielo. Calistenia acuática adaptada y robótica asistiva por Grupo Tres Generaciones.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

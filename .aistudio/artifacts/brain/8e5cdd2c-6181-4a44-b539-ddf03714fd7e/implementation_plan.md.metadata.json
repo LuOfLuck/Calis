@@ -1,0 +1,6 @@
+{
+  "summary":  "Plan de optimización de rendimiento sin cambios visuales: pre-renderizado de sprites en caché para las partículas de fondo, eliminación de layout thrashing en eventos de mouse globales y pausa inteligente por visibilidad (IntersectionObserver) junto con optimización de normales en el gemelo 3D.",
+  "updatedAt":  "2026-10-31T05:13:55.297639388Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

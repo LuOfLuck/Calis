@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CALISPONYO — Tecnología que Emerge | Experiencia Interactiva 3D</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js para el Gemelo Digital 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts: Syne, Plus Jakarta Sans & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        display: ['"Syne"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        abyss: {
+                            950: '#02070e',
+                            900: '#051020',
+                            800: '#0a1e38',
+                        },
+                        biocian: {
+                            DEFAULT: '#00f2fe',
+                            glow: '#4facfe',
+                            mint: '#00ffaa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --mouse-x: 50%;
+            --mouse-y: 50%;
+        }
+
+        body {
+            background-color: #02070e;
+            color: #f1f5f9;
+            overflow-x: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Ambient Interactive Cursor Caustic Glow */
+        .caustic-bg {
+            background: 
+                radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(0, 242, 254, 0.09), transparent 45%),
+                radial-gradient(600px circle at 85% 15%, rgba(79, 172, 254, 0.12), transparent 50%),
+                radial-gradient(700px circle at 10% 85%, rgba(0, 255, 170, 0.07), transparent 55%),
+                #02070e;
+        }
+
+        /* Subtle Noise Overlay for Premium Film Grain */
+        .noise-overlay {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* Futuristic Bento Card with Mouse Spotlight */
+        .bento-card {
+            position: relative;
+            background: rgba(5, 16, 32, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease;
+            overflow: hidden;
+        }
+
+        .bento-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(500px circle at var(--card-x, 50%) var(--card-y, 50%), rgba(0, 242, 254, 0.14), transparent 40%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .bento-card:hover::before {
+            opacity: 1;
+        }
+
+        .bento-card:hover {
+            border-color: rgba(0, 242, 254, 0.35);
+            box-shadow: 0 20px 50px -15px rgba(0, 242, 254, 0.15);
+        }
+
+        /* Neon Text Gradients */
+        .text-liquid-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #00f2fe 55%, #00ffaa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Infinite Marquee */
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            display: flex;
+            width: max-content;
+            animation: marquee 32s linear infinite;
+        }
+        .animate-marquee:hover {
+            animation-play-state: paused;
+        }
+
+        /* Custom Futuristic Slider */
+        input[type=range].hud-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type=range].hud-slider::-webkit-slider-runnable-track {
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #0a1e38 0%, #00f2fe 60%, #00ffaa 100%);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+        }
+        input[type=range].hud-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #02070e;
+            border: 3px solid #00f2fe;
+            box-shadow: 0 0 20px #00f2fe;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        input[type=range].hud-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #00f2fe;
+        }
+
+        /* Pulse Ring */
+        @keyframes pulseRing {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            70% { transform: scale(1.5); opacity: 0; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .pulse-ring::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            border: 2px solid #00f2fe;
+            animation: pulseRing 2s infinite;
+        }
+
+        /* Three.js Canvas Container */
+        #three-canvas-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            outline: none;
+        }
+    </style>
+</head>
+<body class="caustic-bg selection:bg-biocian selection:text-abyss-950">
+
+    <!-- Subtle Dot Grid Overlay -->
+    <div class="fixed inset-0 noise-overlay pointer-events-none z-0"></div>
+
+    <!-- ================= FLOATING DYNAMIC ISLAND NAVBAR ================= -->
+    <header class="fixed top-5 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none">
+        <nav class="pointer-events-auto bento-card rounded-full px-3 sm:px-6 py-2.5 flex items-center gap-3 sm:gap-7 shadow-2xl border border-white/15 bg-abyss-950/80">
+            <!-- Brand Identity -->
+            <a href="#hero" class="flex items-center gap-2.5 pr-2">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-biocian to-biocian-mint p-[1.5px]">
+                    <div class="w-full h-full bg-abyss-950 rounded-full flex items-center justify-center">
+                        <!-- Custom SVG Ladder + Wave Icon -->
+                        <svg class="w-5 h-5" viewBox="0 0 64 64" fill="none">
+                            <path d="M22 44V14C22 10.5 25 8 28 8C31 8 34 10.5 34 14" stroke="#00f2fe" stroke-width="5" stroke-linecap="round"/>
+                            <path d="M36 44V14C36 10.5 39 8 42 8C45 8 48 10.5 48 14" stroke="#00ffaa" stroke-width="5" stroke-linecap="round"/>
+                            <line x1="22" y1="24" x2="36" y2="24" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+                            <line x1="22" y1="33" x2="36" y2="33" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+                            <path d="M8 46C15 40 21 40 28 46C35 52 41 52 48 46C52 42 55 42 58 46" stroke="#00f2fe" stroke-width="5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="leading-none">
+                    <span class="font-display font-extrabold text-sm sm:text-base tracking-wider text-white block">CALISPONYO</span>
+                    <span class="font-mono text-[9px] text-biocian uppercase tracking-widest">Tech.Emerge // 2026</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <div class="hidden lg:flex items-center gap-6 text-xs font-medium text-slate-300 uppercase tracking-widest">
+                <a href="#gemelo-3d" class="hover:text-biocian transition">Gemelo 3D</a>
+                <a href="#bisociacion" class="hover:text-biocian transition">Fusión Mental</a>
+                <a href="#bento-origen" class="hover:text-biocian transition">El Origen</a>
+                <a href="#protocolos" class="hover:text-biocian transition">Calistenia Aqua</a>
+                <a href="#equipo" class="hover:text-biocian transition">Tres Generaciones</a>
+            </div>
+
+            <!-- Action CTA: Video Pitch 30s -->
+            <div class="flex items-center gap-2">
+                <button onclick="startCinematicPitch()" class="relative pulse-ring px-4 py-2 rounded-full bg-gradient-to-r from-biocian to-biocian-mint text-abyss-950 font-display font-bold text-xs uppercase tracking-wider hover:brightness-110 transition flex items-center gap-2 shadow-lg shadow-biocian/20">
+                    <i class="fa-solid fa-play text-[10px]"></i>
+                    <span>Pitch 30s</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ================= HERO SECTION: BIOMEDICAL AQUA TECH ================= -->
+    <section id="hero" class="relative min-h-screen pt-28 pb-16 flex flex-col justify-between overflow-hidden z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto">
+            <!-- Top Status Pill -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+                <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md">
+                    <span class="w-2 h-2 rounded-full bg-biocian-mint animate-ping"></span>
+                    <span class="font-mono text-[11px] uppercase tracking-widest text-slate-300">
+                        TALLER IHeCSI 2026 • PRÁCTICA DE BISOCIACIÓN CREATIVA
+                    </span>
+                </div>
+                <div class="hidden sm:flex items-center gap-4 font-mono text-xs text-slate-400">
+                    <span>[SISTEMA: ESCALERA AL CIELO v2.6]</span>
+                    <span class="text-biocian">● ONLINE</span>
+                </div>
+            </div>
+
+            <!-- Massive Editorial Typography -->
+            <div class="grid lg:grid-cols-12 gap-8 items-end">
+                <div class="lg:col-span-8 space-y-6">
+                    <h1 class="font-display font-extrabold text-5xl sm:text-7xl xl:text-8xl tracking-tight leading-[0.95] text-white">
+                        TECNOLOGÍA <br>
+                        QUE <span class="text-liquid-gradient">EMERGE</span> <br>
+                        CON VOS.
+                    </h1>
+                    <p class="text-slate-300 text-base sm:text-xl max-w-2xl font-normal leading-relaxed">
+                        Transformamos el acceso a la salud y al deporte con la primera línea de <strong class="text-white font-semibold">calistenia adaptada al entorno acuático</strong>. Unimos la fuerza del movimiento con robótica asistiva sumergible para devolver la autonomía.
+                    </p>
+
+                    <!-- Interactive Hero Buttons -->
+                    <div class="flex flex-wrap items-center gap-4 pt-2">
+                        <a href="#gemelo-3d" class="group px-7 py-4 rounded-2xl bg-white text-abyss-950 font-display font-bold text-sm sm:text-base tracking-wide hover:bg-biocian transition-all flex items-center gap-3 shadow-2xl shadow-biocian/20">
+                            <span>EXPLORAR GEMELO DIGITAL 3D</span>
+                            <i class="fa-solid fa-cube group-hover:rotate-45 transition-transform"></i>
+                        </a>
+                        <button onclick="startCinematicPitch()" class="px-6 py-4 rounded-2xl bento-card text-white font-semibold text-sm sm:text-base hover:border-biocian transition flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-biocian/20 border border-biocian/50 flex items-center justify-center text-biocian">
+                                <i class="fa-solid fa-film"></i>
+                            </span>
+                            <span>Modo Video Pitch (30s Auto-Guiado)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Floating Telemetry HUD Card -->
+                <div class="lg:col-span-4">
+                    <div class="bento-card rounded-3xl p-6 space-y-5 border border-biocian/25">
+                        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                            <div>
+                                <span class="font-mono text-[10px] text-biocian uppercase tracking-widest block">PRODUCTO ESTRELLA</span>
+                                <h2 class="font-display font-bold text-xl text-white">«Escalera al Cielo»</h2>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-md bg-biocian/15 text-biocian font-mono text-xs font-bold">
+                                3-EN-1
+                            </span>
+                        </div>
+
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Integra una <strong class="text-white">silla postural</strong> en una <strong class="text-white">plataforma sumergible</strong> con <strong class="text-white">escalera automática</strong> y estación de <strong class="text-biocian">calistenia acuática</strong>.
+                        </p>
+
+                        <div class="grid grid-cols-3 gap-2 pt-1">
+                            <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
+                                <span class="font-display font-extrabold text-xl sm:text-2xl text-biocian block">-85%</span>
+                                <span class="font-mono text-[10px] text-slate-400 uppercase">Peso Axial</span>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
+                                <span class="font-display font-extrabold text-xl sm:text-2xl text-biocian-mint block">100%</span>
+                                <span class="font-mono text-[10px] text-slate-400 uppercase">Autonomía</span>
+                            </div>
+                            <div class="p-3 rounded-2xl bg-white/[0.03] border border-white/5 text-center">
+                                <span class="font-display font-extrabold text-xl sm:text-2xl text-white block">1.2m</span>
+                                <span class="font-mono text-[10px] text-slate-400 uppercase">Inmersión</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Infinite Kinetic Ticker Ribbon -->
+        <div class="mt-14 border-y border-white/10 bg-abyss-900/70 backdrop-blur-md py-3.5 overflow-hidden">
+            <div class="animate-marquee flex items-center gap-10 font-mono text-xs uppercase tracking-[0.25em] text-slate-300">
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian"></i> INCLUSIÓN EN MOVIMIENTO</span>
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian-mint"></i> ESCALERA AL CIELO</span>
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian"></i> CALISTENIA ACUÁTICA ADAPTADA</span>
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian-mint"></i> HIDROCINESITERAPIA SIN IMPACTO</span>
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian"></i> GRUPO TRES GENERACIONES</span>
+                <!-- Duplicate for seamless loop -->
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian"></i> INCLUSIÓN EN MOVIMIENTO</span>
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian-mint"></i> ESCALERA AL CIELO</span>
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian"></i> CALISTENIA ACUÁTICA ADAPTADA</span>
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian-mint"></i> HIDROCINESITERAPIA SIN IMPACTO</span>
+                <span class="flex items-center gap-3"><i class="fa-solid fa-asterisk text-biocian"></i> GRUPO TRES GENERACIONES</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= SECCIÓN 2: GEMELO DIGITAL 3D INTERACTIVO (THREE.JS) ================= -->
+    <section id="gemelo-3d" class="py-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Section Header -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 font-mono text-xs text-biocian uppercase tracking-widest mb-2">
+                        <i class="fa-solid fa-cube"></i> SIMULADOR BIOMECÁNICO EN TIEMPO REAL
+                    </div>
+                    <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-white">
+                        Gemelo Digital 3D: <span class="text-liquid-gradient">«Escalera al Cielo»</span>
+                    </h2>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-400 font-mono max-w-md">
+                    [INTERACCIÓN]: Arrastrá con el mouse o tu dedo sobre el visor 3D para rotar la cámara 360°. Usá el deslizador para sumergir la plataforma.
+                </p>
+            </div>
+
+            <!-- Main Interactive Cockpit Grid -->
+            <div class="grid lg:grid-cols-12 gap-6 items-stretch">
+                
+                <!-- 3D Viewport (8 Columns) -->
+                <div class="lg:col-span-8 bento-card rounded-3xl overflow-hidden flex flex-col justify-between min-h-[460px] sm:min-h-[540px] relative border border-biocian/30">
+                    
+                    <!-- Top Floating HUD Overlay inside 3D Viewport -->
+                    <div class="relative z-20 p-4 sm:p-6 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+                        <div class="flex items-center gap-2.5 bg-abyss-950/85 border border-white/15 px-3.5 py-1.5 rounded-full backdrop-blur-md">
+                            <span class="w-2.5 h-2.5 rounded-full bg-biocian animate-pulse"></span>
+                            <span id="hud-phase-badge" class="font-mono text-xs text-white font-semibold">
+                                FASE 01 // EMBARQUE EN BORDE SECO
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-2 pointer-events-auto">
+                            <button onclick="setCameraAngle('iso')" class="px-3 py-1.5 rounded-xl bg-abyss-950/80 hover:bg-biocian hover:text-abyss-950 border border-white/15 font-mono text-xs text-slate-200 transition">
+                                Vista 3D
+                            </button>
+                            <button onclick="setCameraAngle('side')" class="px-3 py-1.5 rounded-xl bg-abyss-950/80 hover:bg-biocian hover:text-abyss-950 border border-white/15 font-mono text-xs text-slate-200 transition">
+                                Perfil Técnico
+                            </button>
+                            <button onclick="setCameraAngle('front')" class="px-3 py-1.5 rounded-xl bg-abyss-950/80 hover:bg-biocian hover:text-abyss-950 border border-white/15 font-mono text-xs text-slate-200 transition">
+                                Frente Calistenia
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Three.js WebGL Mount Container -->
+                    <div id="three-canvas-container" class="absolute inset-0 z-10 cursor-grab active:cursor-grabbing"></div>
+
+                    <!-- Bottom Floating Telemetry inside 3D Viewport -->
+                    <div class="relative z-20 p-4 sm:p-6 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-t from-abyss-950 via-abyss-950/80 to-transparent pointer-events-none">
+                        <div class="flex items-center gap-6 font-mono text-xs">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">PROFUNDIDAD</span>
+                                <span id="hud-depth-val" class="text-biocian font-bold text-base">0.00 m</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">INGRAVIDEZ ACUÁTICA</span>
+                                <span id="hud-buoyancy-val" class="text-biocian-mint font-bold text-base">0%</span>
+                            </div>
+                            <div class="hidden sm:block">
+                                <span class="text-slate-400 block text-[10px]">PELDAÑOS ARTICULADOS</span>
+                                <span id="hud-steps-val" class="text-white font-bold text-base">Nivelados (0°)</span>
+                            </div>
+                        </div>
+
+                        <button onclick="toggleAutoCycle3D()" id="btn-autocycle-3d" class="pointer-events-auto px-4 py-2 rounded-xl bg-biocian/20 hover:bg-biocian hover:text-abyss-950 border border-biocian/50 text-biocian font-mono text-xs font-bold transition flex items-center gap-2">
+                            <i class="fa-solid fa-Arrows-spin"></i>
+                            <span>Simulación Automática</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Control Deck & Biomechanical Breakdown (4 Columns) -->
+                <div class="lg:col-span-4 bento-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-6">
+                    <div class="space-y-5">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-xs uppercase tracking-widest text-biocian">PANEL DE CONTROL</span>
+                            <span id="slider-pct-display" class="font-mono font-bold text-lg text-white bg-white/10 px-3 py-0.5 rounded-lg">0%</span>
+                        </div>
+
+                        <!-- Tactile Immersion Slider -->
+                        <div class="space-y-2">
+                            <label for="slider-3d" class="text-xs text-slate-300 font-medium block">
+                                Deslizá para controlar el descenso hidromecánico:
+                            </label>
+                            <input id="slider-3d" type="range" min="0" max="100" value="0" class="w-full hud-slider" oninput="update3DSimulation(this.value)">
+                            <div class="flex justify-between font-mono text-[10px] text-slate-400 pt-1">
+                                <span>0% BORDE</span>
+                                <span>50% TRANSICIÓN</span>
+                                <span>100% CALISTENIA</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Phase Selector Buttons -->
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="stopAutoCycle3D(); update3DSimulation(0)" id="btn-phase-1" class="p-3 rounded-2xl border border-biocian bg-biocian/15 text-left transition">
+                                <span class="font-mono text-[10px] text-biocian block">01</span>
+                                <span class="font-display font-bold text-xs text-white">Borde</span>
+                            </button>
+                            <button onclick="stopAutoCycle3D(); update3DSimulation(50)" id="btn-phase-2" class="p-3 rounded-2xl border border-white/10 bg-white/[0.02] text-left hover:border-white/30 transition">
+                                <span class="font-mono text-[10px] text-slate-400 block">02</span>
+                                <span class="font-display font-bold text-xs text-white">Descenso</span>
+                            </button>
+                            <button onclick="stopAutoCycle3D(); update3DSimulation(100)" id="btn-phase-3" class="p-3 rounded-2xl border border-white/10 bg-white/[0.02] text-left hover:border-white/30 transition">
+                                <span class="font-mono text-[10px] text-slate-400 block">03</span>
+                                <span class="font-display font-bold text-xs text-white">Ejercicio</span>
+                            </button>
+                        </div>
+
+                        <!-- Dynamic Engineering Explanation Box -->
+                        <div class="p-4 rounded-2xl bg-abyss-950/90 border border-white/10 space-y-2">
+                            <h3 id="panel-stage-title" class="font-display font-bold text-base text-biocian">
+                                1. Transferencia Segura y Autónoma
+                            </h3>
+                            <p id="panel-stage-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                                La plataforma se nivela a ras del borde de la pileta. La silla postural permanece anclada magnéticamente para que el usuario ingrese sin escalones ni esfuerzo físico.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Component Legend -->
+                    <div class="space-y-2.5 pt-4 border-t border-white/10 text-xs">
+                        <div class="flex items-center justify-between text-slate-300">
+                            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-white inline-block"></span> Silla Ergonómica Postural</span>
+                            <span class="font-mono text-[11px] text-emerald-400">Estable</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-300">
+                            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-biocian inline-block"></span> Escalera Automática Sumergible</span>
+                            <span id="legend-stairs-state" class="font-mono text-[11px] text-biocian">Plegada en Borde</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-300">
+                            <span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Barras de Calistenia Acuática</span>
+                            <span id="legend-bars-state" class="font-mono text-[11px] text-amber-300">En Espera</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= SECCIÓN 3: LABORATORIO DE BISOCIACIÓN CREATIVA ================= -->
+    <section id="bisociacion" class="py-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-14">
+                <span class="font-mono text-xs uppercase tracking-widest text-biocian-mint bg-biocian-mint/10 border border-biocian-mint/30 px-3.5 py-1 rounded-full">
+                    RUTA METODOLÓGICA // 01 IDENTIFICAR → 02 FUSIONAR → 03 IDEAR
+                </span>
+                <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-white mt-4">
+                    Motor de <span class="text-liquid-gradient">Bisociación Creativa</span>
+                </h2>
+                <p class="text-slate-300 mt-3 text-sm sm:text-base">
+                    La bisociación consiste en conectar marcos de referencia independientes para crear una solución disruptiva. Seleccioná cada nodo para ver cómo se fusionan en <strong>CALISPONYO</strong>.
+                </p>
+            </div>
+
+            <!-- Interactive 3-Node Reactor -->
+            <div class="grid lg:grid-cols-3 gap-6 relative">
+                <!-- Node 1: Calistenia -->
+                <div onclick="activateBisoNode(1)" id="biso-node-1" class="bento-card rounded-3xl p-7 cursor-pointer border-biocian ring-1 ring-biocian/50">
+                    <div class="flex items-center justify-between mb-6">
+                        <span class="font-mono text-xs text-biocian px-3 py-1 rounded-full bg-biocian/10 border border-biocian/30">
+                            ESTÍMULO 01 // DEPORTE
+                        </span>
+                        <span class="font-display font-extrabold text-3xl text-white/20">A</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-biocian/15 border border-biocian/40 flex items-center justify-center text-biocian text-xl mb-4">
+                        <i class="fa-solid fa-dumbbell"></i>
+                    </div>
+                    <h3 class="font-display font-bold text-2xl text-white mb-2">Calistenia & Autocarga</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Entrenamiento mediante barras paralelas, dominadas y anillas que desarrolla el control neuromuscular y la fuerza funcional adaptada a cada cuerpo.
+                    </p>
+                </div>
+
+                <!-- Node 2: Medio Acuático / Ponyo -->
+                <div onclick="activateBisoNode(2)" id="biso-node-2" class="bento-card rounded-3xl p-7 cursor-pointer">
+                    <div class="flex items-center justify-between mb-6">
+                        <span class="font-mono text-xs text-biocian-mint px-3 py-1 rounded-full bg-biocian-mint/10 border border-biocian-mint/30">
+                            ESTÍMULO 02 // AGUA & «PONYO»
+                        </span>
+                        <span class="font-display font-extrabold text-3xl text-white/20">B</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-biocian-mint/15 border border-biocian-mint/40 flex items-center justify-center text-biocian-mint text-xl mb-4">
+                        <i class="fa-solid fa-water"></i>
+                    </div>
+                    <h3 class="font-display font-bold text-2xl text-white mb-2">Hidrocinesiterapia</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        El agua como medio liberador: el empuje hidrostático relaja la musculatura, disminuye la espasticidad y elimina el impacto sobre las articulaciones.
+                    </p>
+                </div>
+
+                <!-- Node 3: Tecnología Asistiva -->
+                <div onclick="activateBisoNode(3)" id="biso-node-3" class="bento-card rounded-3xl p-7 cursor-pointer">
+                    <div class="flex items-center justify-between mb-6">
+                        <span class="font-mono text-xs text-amber-300 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30">
+                            ESTÍMULO 03 // MECATRÓNICA
+                        </span>
+                        <span class="font-display font-extrabold text-3xl text-white/20">C</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 text-xl mb-4">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <h3 class="font-display font-bold text-2xl text-white mb-2">Robótica Asistiva</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Sistemas de elevación e inmersión automatizados que reemplazan las escaleras inaccesibles por una transición suave, segura y autónoma.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Fusion Result Core Banner -->
+            <div class="mt-8 bento-card rounded-3xl p-6 sm:p-8 border border-biocian/40 bg-gradient-to-r from-abyss-900 via-abyss-800/80 to-abyss-900">
+                <div class="grid md:grid-cols-12 gap-6 items-center">
+                    <div class="md:col-span-8 space-y-2">
+                        <div class="flex items-center gap-2 font-mono text-xs text-biocian">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span id="biso-output-tag">INTERSECCIÓN CREATIVA FORZADA (PASO 3)</span>
+                        </div>
+                        <h4 id="biso-output-title" class="font-display font-extrabold text-2xl sm:text-3xl text-white">
+                            CALISPONYO: Calistenia Acuática + «Escalera al Cielo»
+                        </h4>
+                        <p id="biso-output-desc" class="text-sm sm:text-base text-slate-300 leading-relaxed">
+                            Donde antes había una escalera imposible para una persona con desafíos neurológicos, ahora emerge una estación mecatrónica que la sumerge con dignidad y despliega barras de calistenia adaptadas dentro del agua.
+                        </p>
+                    </div>
+                    <div class="md:col-span-4 flex md:justify-end">
+                        <button onclick="triggerFullFusionAnimation()" class="w-full md:w-auto px-6 py-4 rounded-2xl bg-gradient-to-r from-biocian to-biocian-mint text-abyss-950 font-display font-bold text-sm uppercase tracking-wider hover:brightness-110 transition shadow-xl shadow-biocian/20">
+                            Fusionar los 3 Marcos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= SECCIÓN 4: BENTO GRID - EL ORIGEN Y LA MISIÓN ================= -->
+    <section id="bento-origen" class="py-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-12">
+                <span class="font-mono text-xs text-biocian uppercase tracking-widest">IMPACTO HUMANO Y SOCIAL</span>
+                <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-white mt-2">
+                    De una Necesidad Familiar a una <span class="text-liquid-gradient">Revolución Inclusiva</span>
+                </h2>
+            </div>
+
+            <!-- Asymmetric Bento Architecture -->
+            <div class="grid lg:grid-cols-12 gap-6">
+                
+                <!-- Card 1: El Origen Real (7 Cols) -->
+                <div class="lg:col-span-7 bento-card rounded-3xl p-8 sm:p-10 flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-400/30 text-rose-300 font-mono text-xs">
+                            <i class="fa-solid fa-heart-pulse"></i> EL ORIGEN: UNA HISTORIA REAL
+                        </span>
+                        <h3 class="font-display font-bold text-2xl sm:text-4xl text-white leading-tight">
+                            Una niña con desafíos neurológicos y la barrera del primer escalón.
+                        </h3>
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                            El proyecto nace de una problemática familiar concreta: las escaleras convencionales de las piletas impedían el ingreso autónomo. Identificamos el agua como el medio ideal para su terapia gracias a la <strong class="text-white">relajación muscular</strong> y la <strong class="text-white">reducción de impacto</strong>, pero el acceso seguro seguía siendo el obstáculo principal.
+                        </p>
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                        <div class="p-4 rounded-2xl bg-white/[0.03] border border-white/5">
+                            <span class="font-mono text-xs text-rose-300 block mb-1">ANTES (BARRERA)</span>
+                            <p class="text-xs text-slate-300">Dependencia física total de terceros, riesgo de resbalones en escaleras verticales y pérdida de autonomía.</p>
+                        </div>
+                        <div class="p-4 rounded-2xl bg-biocian/10 border border-biocian/30">
+                            <span class="font-mono text-xs text-biocian block mb-1">AHORA (CALISPONYO)</span>
+                            <p class="text-xs text-white">Ingreso sentado, suave y controlado que se transforma en un gimnasio acuático personalizado.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Filosofía & Eslogan (5 Cols) -->
+                <div class="lg:col-span-5 bento-card rounded-3xl p-8 sm:p-10 flex flex-col justify-between bg-gradient-to-br from-abyss-900 to-abyss-800 border-biocian/30">
+                    <div class="flex items-center justify-between">
+                        <span class="font-mono text-xs text-biocian-mint uppercase tracking-widest">NUESTRA FILOSOFÍA</span>
+                        <i class="fa-solid fa-quote-right text-3xl text-white/15"></i>
+                    </div>
+
+                    <div class="my-auto py-6 space-y-4">
+                        <p class="font-display font-extrabold text-3xl sm:text-4xl text-white leading-tight">
+                            «No solo creamos equipos; creamos puentes hacia una mejor calidad de vida.»
+                        </p>
+                        <p class="font-mono text-sm text-biocian">
+                            — Tecnología que emerge con vos.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-4 border-t border-white/10 text-xs text-slate-400">
+                        <span>Salud + Deporte Adaptado</span>
+                        <span class="text-white font-semibold">Dignidad & Autonomía</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Innovación Técnica (4 Cols) -->
+                <div class="lg:col-span-4 bento-card rounded-3xl p-7 space-y-3">
+                    <div class="w-11 h-11 rounded-2xl bg-biocian/15 border border-biocian/30 flex items-center justify-center text-biocian text-lg">
+                        <i class="fa-solid fa-chair"></i>
+                    </div>
+                    <h4 class="font-display font-bold text-xl text-white">Silla + Plataforma Sumergible</h4>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        Integración estructural sin costuras: la silla acompaña al usuario desde el borde seco hasta la profundidad terapéutica seleccionada.
+                    </p>
+                </div>
+
+                <!-- Card 4: Función (4 Cols) -->
+                <div class="lg:col-span-4 bento-card rounded-3xl p-7 space-y-3">
+                    <div class="w-11 h-11 rounded-2xl bg-biocian-mint/15 border border-biocian-mint/30 flex items-center justify-center text-biocian-mint text-lg">
+                        <i class="fa-solid fa-stairs"></i>
+                    </div>
+                    <h4 class="font-display font-bold text-xl text-white">Sistema de Escalera Automática</h4>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        Peldaños inteligentes que se articulan durante el descenso y ascenso, permitiendo también el uso peatonal asistido con barandas.
+                    </p>
+                </div>
+
+                <!-- Card 5: Impacto (4 Cols) -->
+                <div class="lg:col-span-4 bento-card rounded-3xl p-7 space-y-3">
+                    <div class="w-11 h-11 rounded-2xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-300 text-lg">
+                        <i class="fa-solid fa-universal-access"></i>
+                    </div>
+                    <h4 class="font-display font-bold text-xl text-white">Calistenia Acuática Inclusiva</h4>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        Primera línea de barras, paralelas y agarres sumergibles adaptados según las capacidades motrices únicas de cada persona.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= SECCIÓN 5: PROTOCOLOS DE CALISTENIA ACUÁTICA ================= -->
+    <section id="protocolos" class="py-20 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+                <div>
+                    <span class="font-mono text-xs text-biocian uppercase tracking-widest">ENTRENAMIENTO ADAPTATIVO</span>
+                    <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-white mt-2">
+                        Estaciones según <span class="text-liquid-gradient">Capacidad Motriz</span>
+                    </h2>
+                </div>
+
+                <!-- Interactive Selector Pills -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="renderWorkoutProtocol('neuro')" id="proto-btn-neuro" class="px-4 py-2.5 rounded-xl bg-biocian text-abyss-950 font-display font-bold text-xs uppercase tracking-wider transition">
+                        01. Asistencia Neurológica
+                    </button>
+                    <button onclick="renderWorkoutProtocol('movilidad')" id="proto-btn-movilidad" class="px-4 py-2.5 rounded-xl bento-card text-slate-300 hover:text-white font-display font-bold text-xs uppercase tracking-wider transition">
+                        02. Movilidad Reducida
+                    </button>
+                    <button onclick="renderWorkoutProtocol('avanzado')" id="proto-btn-avanzado" class="px-4 py-2.5 rounded-xl bento-card text-slate-300 hover:text-white font-display font-bold text-xs uppercase tracking-wider transition">
+                        03. Calistenia Funcional
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Protocol Cards Container -->
+            <div id="protocol-cards-grid" class="grid md:grid-cols-3 gap-6">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= SECCIÓN 6: EQUIPO "GRUPO TRES GENERACIONES" & QR ================= -->
+    <section id="equipo" class="py-20 border-t border-white/10 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-12 gap-8 items-center">
+                
+                <!-- Team Members (8 Cols) -->
+                <div class="lg:col-span-8 space-y-6">
+                    <div>
+                        <span class="font-mono text-xs text-biocian uppercase tracking-widest">FICHA TÉCNICA CONCEPTUAL // INTEGRANTES</span>
+                        <h2 class="font-display font-extrabold text-3xl sm:text-5xl text-white mt-2">
+                            GRUPO TRES GENERACIONES
+                        </h2>
+                        <p class="text-slate-400 text-sm mt-1">
+                            Taller IHeCSI 2026 Edición Especial — Práctica de Bisociación Creativa.
+                        </p>
+                    </div>
+
+                    <div class="grid sm:grid-cols-3 gap-4">
+                        <!-- Adriana -->
+                        <div class="bento-card rounded-2xl p-5 border border-white/10">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="w-10 h-10 rounded-xl bg-biocian/15 border border-biocian/40 flex items-center justify-center font-display font-bold text-biocian">
+                                    AA
+                                </span>
+                                <span class="font-mono text-[10px] text-slate-400">GEN // 01</span>
+                            </div>
+                            <h3 class="font-display font-bold text-base text-white">Adriana Antonuccio</h3>
+                            <p class="font-mono text-xs text-biocian mt-1">DNI: 28.285.750</p>
+                        </div>
+
+                        <!-- Ana Laura -->
+                        <div class="bento-card rounded-2xl p-5 border border-white/10">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="w-10 h-10 rounded-xl bg-biocian-mint/15 border border-biocian-mint/40 flex items-center justify-center font-display font-bold text-biocian-mint">
+                                    AL
+                                </span>
+                                <span class="font-mono text-[10px] text-slate-400">GEN // 02</span>
+                            </div>
+                            <h3 class="font-display font-bold text-base text-white">Ana Laura López Ado</h3>
+                            <p class="font-mono text-xs text-biocian-mint mt-1">DNI: 26.317.896</p>
+                        </div>
+
+                        <!-- Lucas -->
+                        <div class="bento-card rounded-2xl p-5 border border-white/10">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/40 flex items-center justify-center font-display font-bold text-amber-300">
+                                    LG
+                                </span>
+                                <span class="font-mono text-[10px] text-slate-400">GEN // 03</span>
+                            </div>
+                            <h3 class="font-display font-bold text-base text-white">Lucas Guerrero</h3>
+                            <p class="font-mono text-xs text-amber-300 mt-1">DNI: 44.258.221</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive QR & Deliverable Card (4 Cols) -->
+                <div class="lg:col-span-4">
+                    <div class="bento-card rounded-3xl p-6 text-center space-y-4 border border-biocian/30">
+                        <span class="font-mono text-[10px] text-biocian uppercase tracking-widest block">
+                            RECURSO DE COMUNICACIÓN PERSUASIVA
+                        </span>
+                        <h4 class="font-display font-bold text-lg text-white">CONOCÉ CALISPONYO</h4>
+                        <p class="text-xs text-slate-300">
+                            Experiencia web interactiva vinculada al código QR del Flyer y Ficha Técnica Conceptual.
+                        </p>
+                        <div class="pt-2 flex flex-col gap-2">
+                            <button onclick="startCinematicPitch()" class="w-full py-3 rounded-xl bg-biocian text-abyss-950 font-display font-bold text-xs uppercase tracking-wider hover:bg-white transition">
+                                Reproducir Video Pitch 30s
+                            </button>
+                            <div class="font-mono text-[11px] text-slate-400 bg-abyss-950/90 py-2 px-3 rounded-xl border border-white/5">
+                                BisociaciónCreativa-GrupoTresGeneraciones.pdf
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= OVERLAY FLOTANTE: DIRECTOR DE PITCH CINEMATOGRÁFICO (30s) ================= -->
+    <div id="cinematic-pitch-hud" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-3xl hidden">
+        <div class="bento-card rounded-3xl p-5 sm:p-6 border-2 border-biocian shadow-2xl shadow-biocian/30 bg-abyss-950/95 backdrop-blur-2xl space-y-4">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
+                    <span id="pitch-hud-scene" class="font-mono text-xs text-biocian uppercase tracking-widest font-bold">
+                        PITCH 30S EN VIVO // ESCENA 1 DE 4
+                    </span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="pitch-hud-timer" class="font-mono font-bold text-sm text-white bg-white/10 px-3 py-1 rounded-lg">
+                        00:00 / 00:30
+                    </span>
+                    <button onclick="stopCinematicPitch()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-rose-500/30 text-slate-300 hover:text-white flex items-center justify-center transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                <div id="pitch-hud-bar" class="h-full bg-gradient-to-r from-biocian to-biocian-mint w-0 transition-all duration-300"></div>
+            </div>
+
+            <!-- Teleprompter Script Text -->
+            <div class="p-4 rounded-2xl bg-white/[0.04] border border-white/10 text-center">
+                <p id="pitch-hud-script" class="font-display font-bold text-base sm:text-xl text-white leading-snug">
+                    "La hidroterapia sana, pero para muchas personas con desafíos motrices, entrar al agua es una barrera imposible."
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT: THREE.JS 3D ENGINE + INTERACTIONS ================= -->
+    <script>
+        // ------------------------------------------------------------------
+        // 1. SPOTLIGHT MOUSE TRACKING FOR BENTO CARDS & CAUSTIC BACKGROUND
+        // ------------------------------------------------------------------
+        document.addEventListener('mousemove', (e) => {
+            document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+            document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+
+            document.querySelectorAll('.bento-card').forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--card-x', `${x}px`);
+                card.style.setProperty('--card-y', `${y}px`);
+            });
+        });
+
+        // ------------------------------------------------------------------
+        // 2. THREE.JS 3D DIGITAL TWIN: "ESCALERA AL CIELO"
+        // ------------------------------------------------------------------
+        let scene, camera, renderer;
+        let carriageGroup, calisthenicsBarsGroup, waterMesh, bubblesSystem;
+        let stepMeshes = [];
+        let targetImmersion = 0; // 0 to 1
+        let currentImmersion = 0;
+        let targetCamAngle = { theta: 0.75, phi: 1.05, dist: 12.5 };
+        let currentCamAngle = { theta: 0.75, phi: 1.05, dist: 12.5 };
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let autoCycleInterval = null;
+
+        function initThreeJS() {
+            const container = document.getElementById('three-canvas-container');
+            const width = container.clientWidth || 800;
+            const height = container.clientHeight || 520;
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x02070e, 0.035);
+
+            camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x88ccff, 0.75);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+            dirLight.position.set(8, 14, 10);
+            scene.add(dirLight);
+
+            const aquaPointLight = new THREE.PointLight(0x00f2fe, 1.6, 18);
+            aquaPointLight.position.set(2, -1, 2);
+            scene.add(aquaPointLight);
+
+            // Materials
+            const deckMat = new THREE.MeshStandardMaterial({ color: 0x0f1f38, roughness: 0.6, metalness: 0.2 });
+            const copingMat = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, roughness: 0.4, metalness: 0.3 });
+            const steelMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.25, metalness: 0.85 });
+            const neonCyanMat = new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.45, roughness: 0.2 });
+            const neonGoldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 0.35, roughness: 0.2 });
+            const seatMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.1 });
+
+            // 1. Pool Deck & Wall Structure (Left Side)
+            const deckWall = new THREE.Mesh(new THREE.BoxGeometry(4.5, 5.2, 6.5), deckMat);
+            deckWall.position.set(-4.25, -0.4, 0);
+            scene.add(deckWall);
+
+            // Pool Coping Edge
+            const copingEdge = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.25, 6.6), copingMat);
+            copingEdge.position.set(-2.15, 2.25, 0);
+            scene.add(copingEdge);
+
+            // Pool Floor Grid
+            const gridHelper = new THREE.GridHelper(11, 22, 0x00f2fe, 0x0e294b);
+            gridHelper.position.set(2.2, -2.95, 0);
+            scene.add(gridHelper);
+
+            // 2. Diagonal Mechanical Guide Rails
+            const railLength = 5.8;
+            const railGeo = new THREE.CylinderGeometry(0.08, 0.08, railLength, 16);
+            [-1.1, 1.1].forEach(zOffset => {
+                const rail = new THREE.Mesh(railGeo, steelMat);
+                rail.position.set(-0.2, 0.2, zOffset);
+                rail.rotation.z = Math.PI / 4; // 45 degrees slope into pool
+                scene.add(rail);
+            });
+
+            // 3. Articulating Automatic Stair Steps along the rail
+            const stepGeo = new THREE.BoxGeometry(0.65, 0.08, 2.0);
+            for (let i = 0; i < 5; i++) {
+                const step = new THREE.Mesh(stepGeo, copingMat);
+                const t = (i + 1) / 6;
+                step.position.set(-1.9 + t * 3.4, 2.0 - t * 3.4, 0);
+                scene.add(step);
+                stepMeshes.push(step);
+            }
+
+            // 4. Moving Submersible Carriage Group (Platform + Chair + Calisthenics Bars)
+            carriageGroup = new THREE.Group();
+
+            // Submersible Platform Base
+            const platformBase = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.16, 2.3), neonCyanMat);
+            carriageGroup.add(platformBase);
+
+            // Ergonomic Chair Seat & Backrest
+            const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.14, 0.95), seatMat);
+            chairSeat.position.set(-0.2, 0.55, 0);
+            carriageGroup.add(chairSeat);
+
+            const chairColumn = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.45, 16), steelMat);
+            chairColumn.position.set(-0.2, 0.28, 0);
+            carriageGroup.add(chairColumn);
+
+            const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.15, 0.92), seatMat);
+            chairBack.position.set(-0.62, 1.15, 0);
+            chairBack.rotation.z = 0.12;
+            carriageGroup.add(chairBack);
+
+            const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.55), neonCyanMat);
+            headrest.position.set(-0.7, 1.82, 0);
+            carriageGroup.add(headrest);
+
+            // Safety Armrests
+            [-0.52, 0.52].forEach(zPos => {
+                const arm = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.08, 0.1), neonCyanMat);
+                arm.position.set(-0.2, 0.88, zPos);
+                carriageGroup.add(arm);
+            });
+
+            // 5. Deployable Aquatic Calisthenics Bars Module (Parallel Bars + Overhead Pull Bar)
+            calisthenicsBarsGroup = new THREE.Group();
+            [-0.75, 0.75].forEach(zPos => {
+                // Parallel Dip Bar
+                const hBar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 16), neonGoldMat);
+                hBar.rotation.z = Math.PI / 2;
+                hBar.position.set(0.45, 1.05, zPos);
+                calisthenicsBarsGroup.add(hBar);
+
+                // Vertical Support Post
+                const vPost = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.05, 16), steelMat);
+                vPost.position.set(1.0, 0.52, zPos);
+                calisthenicsBarsGroup.add(vPost);
+            });
+
+            // Overhead Suspension / Pull-up Frame
+            const topCrossBar = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 1.6, 16), neonGoldMat);
+            topCrossBar.rotation.x = Math.PI / 2;
+            topCrossBar.position.set(0.75, 2.25, 0);
+            calisthenicsBarsGroup.add(topCrossBar);
+
+            [-0.75, 0.75].forEach(zPos => {
+                const tallPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 16), steelMat);
+                tallPost.position.set(0.75, 1.65, zPos);
+                calisthenicsBarsGroup.add(tallPost);
+            });
+
+            carriageGroup.add(calisthenicsBarsGroup);
+            scene.add(carriageGroup);
+
+            // 6. Translucent Animated Water Volume
+            const waterGeo = new THREE.BoxGeometry(7.8, 3.9, 6.5, 24, 1, 24);
+            const waterMat = new THREE.MeshPhysicalMaterial({
+                color: 0x00c6ff,
+                transparent: true,
+                opacity: 0.38,
+                roughness: 0.15,
+                metalness: 0.1,
+                transmission: 0.5
+            });
+            waterMesh = new THREE.Mesh(waterGeo, waterMat);
+            waterMesh.position.set(1.9, -1.0, 0);
+            scene.add(waterMesh);
+
+            // 7. Rising Hydrotherapy Bubbles Particle System
+            const bubbleCount = 80;
+            const bubbleGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(bubbleCount * 3);
+            for (let i = 0; i < bubbleCount; i++) {
+                positions[i * 3] = -1.5 + Math.random() * 6.5;
+                positions[i * 3 + 1] = -2.8 + Math.random() * 3.6;
+                positions[i * 3 + 2] = -2.8 + Math.random() * 5.6;
+            }
+            bubbleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const bubbleMat = new THREE.PointsMaterial({ color: 0x00f2fe, size: 0.12, transparent: true, opacity: 0.7 });
+            bubblesSystem = new THREE.Points(bubbleGeo, bubbleMat);
+            scene.add(bubblesSystem);
+
+            // Mouse & Touch Orbit Controls
+            const domElem = renderer.domElement;
+            domElem.addEventListener('mousedown', (e) => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - prevMouse.x;
+                const dy = e.clientY - prevMouse.y;
+                targetCamAngle.theta -= dx * 0.008;
+                targetCamAngle.phi = Math.max(0.4, Math.min(1.45, targetCamAngle.phi - dy * 0.006));
+                prevMouse = { x: e.clientX, y: e.clientY };
+            });
+
+            // Touch Support
+            domElem.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            }, { passive: true });
+            window.addEventListener('touchend', () => { isDragging = false; });
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const dx = e.touches[0].clientX - prevMouse.x;
+                const dy = e.touches[0].clientY - prevMouse.y;
+                targetCamAngle.theta -= dx * 0.008;
+                targetCamAngle.phi = Math.max(0.4, Math.min(1.45, targetCamAngle.phi - dy * 0.006));
+                prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }, { passive: true });
+
+            window.addEventListener('resize', onWindowResize);
+            animateThreeJS();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('three-canvas-container');
+            if (!container || !renderer) return;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+
+        function setCameraAngle(preset) {
+            if (preset === 'iso') targetCamAngle = { theta: 0.75, phi: 1.05, dist: 12.5 };
+            if (preset === 'side') targetCamAngle = { theta: 0.0, phi: 1.32, dist: 11.8 };
+            if (preset === 'front') targetCamAngle = { theta: 1.52, phi: 1.18, dist: 11.2 };
+        }
+
+        function animateThreeJS() {
+            requestAnimationFrame(animateThreeJS);
+
+            // Smooth damping for immersion position
+            currentImmersion += (targetImmersion - currentImmersion) * 0.08;
+
+            // Move carriage along diagonal path from (-2.1, 2.2) to (1.6, -1.5)
+            if (carriageGroup) {
+                const xPos = -2.1 + currentImmersion * 3.7;
+                const yPos = 2.2 - currentImmersion * 3.7;
+                carriageGroup.position.set(xPos, yPos, 0);
+
+                // Deploy Calisthenics bars smoothly as depth increases past 40%
+                const barDeploy = Math.max(0.01, Math.min(1, (currentImmersion - 0.3) * 1.4));
+                calisthenicsBarsGroup.scale.set(barDeploy, barDeploy, 1);
+            }
+
+            // Animate Articulating Steps
+            stepMeshes.forEach((step, idx) => {
+                step.rotation.z = (1 - currentImmersion) * 0.35;
+            });
+
+            // Animate Rising Bubbles
+            if (bubblesSystem) {
+                const posArr = bubblesSystem.geometry.attributes.position.array;
+                for (let i = 0; i < posArr.length; i += 3) {
+                    posArr[i + 1] += 0.018;
+                    if (posArr[i + 1] > 0.85) posArr[i + 1] = -2.8;
+                }
+                bubblesSystem.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Smooth Camera Orbit Interpolation
+            currentCamAngle.theta += (targetCamAngle.theta - currentCamAngle.theta) * 0.08;
+            currentCamAngle.phi += (targetCamAngle.phi - currentCamAngle.phi) * 0.08;
+            currentCamAngle.dist += (targetCamAngle.dist - currentCamAngle.dist) * 0.08;
+
+            camera.position.x = currentCamAngle.dist * Math.sin(currentCamAngle.phi) * Math.sin(currentCamAngle.theta);
+            camera.position.y = currentCamAngle.dist * Math.cos(currentCamAngle.phi);
+            camera.position.z = currentCamAngle.dist * Math.sin(currentCamAngle.phi) * Math.cos(currentCamAngle.theta);
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        // ------------------------------------------------------------------
+        // 3. UI CONTROLS FOR THE 3D SIMULATOR
+        // ------------------------------------------------------------------
+        function update3DSimulation(val) {
+            const pct = parseInt(val, 10);
+            document.getElementById('slider-3d').value = pct;
+            document.getElementById('slider-pct-display').textContent = `${pct}%`;
+
+            targetImmersion = pct / 100;
+
+            // Telemetry Calculations
+            const depth = ((pct / 100) * 1.20).toFixed(2);
+            const buoyancy = Math.min(85, Math.round(pct * 0.85));
+
+            document.getElementById('hud-depth-val').textContent = `${depth} m`;
+            document.getElementById('hud-buoyancy-val').textContent = `${buoyancy}%`;
+            document.getElementById('hud-steps-val').textContent = pct < 20 ? 'En Borde (0°)' : pct < 80 ? 'Articulando' : 'Escalonados';
+
+            // Update Phase Buttons & Descriptions
+            const b1 = document.getElementById('btn-phase-1');
+            const b2 = document.getElementById('btn-phase-2');
+            const b3 = document.getElementById('btn-phase-3');
+            [b1, b2, b3].forEach(b => {
+                b.className = 'p-3 rounded-2xl border border-white/10 bg-white/[0.02] text-left hover:border-white/30 transition';
+            });
+
+            const badge = document.getElementById('hud-phase-badge');
+            const title = document.getElementById('panel-stage-title');
+            const desc = document.getElementById('panel-stage-desc');
+            const stairsLegend = document.getElementById('legend-stairs-state');
+            const barsLegend = document.getElementById('legend-bars-state');
+
+            if (pct < 25) {
+                b1.className = 'p-3 rounded-2xl border border-biocian bg-biocian/15 text-left transition';
+                badge.textContent = 'FASE 01 // EMBARQUE EN BORDE SECO';
+                title.textContent = '1. Transferencia Segura y Autónoma';
+                desc.textContent = 'La plataforma se nivela a ras del borde de la pileta. La silla postural permanece anclada magnéticamente para que el usuario ingrese sin escalones ni esfuerzo físico.';
+                stairsLegend.textContent = 'Anclada en Borde';
+                barsLegend.textContent = 'Replegadas';
+            } else if (pct < 80) {
+                b2.className = 'p-3 rounded-2xl border border-biocian bg-biocian/15 text-left transition';
+                badge.textContent = 'FASE 02 // INMERSIÓN AUTOMATIZADA';
+                title.textContent = '2. Descenso Hidromecánico Progresivo';
+                desc.textContent = 'Los peldaños se articulan automáticamente mientras la plataforma desciende de forma suave y controlada, permitiendo que el cuerpo se adapte a la flotabilidad sin impacto.';
+                stairsLegend.textContent = 'En Transición';
+                barsLegend.textContent = 'Desplegando...';
+            } else {
+                b3.className = 'p-3 rounded-2xl border border-biocian bg-biocian/15 text-left transition';
+                badge.textContent = 'FASE 03 // ESTACIÓN DE CALISTENIA ACUÁTICA';
+                title.textContent = '3. Hidrocinesiterapia y Fuerza Adaptada';
+                desc.textContent = 'A 1.20m de profundidad, las barras paralelas y el pórtico superior quedan activos. El agua alivia el 85% del peso corporal, permitiendo ejercitar con libertad y dignidad.';
+                stairsLegend.textContent = 'Sumergida Fija';
+                barsLegend.textContent = '100% Activas';
+            }
+        }
+
+        function stopAutoCycle3D() {
+            if (autoCycleInterval) {
+                clearInterval(autoCycleInterval);
+                autoCycleInterval = null;
+                document.getElementById('btn-autocycle-3d').innerHTML = '<i class="fa-solid fa-arrows-spin"></i><span>Simulación Automática</span>';
+            }
+        }
+
+        function toggleAutoCycle3D() {
+            if (autoCycleInterval) {
+                stopAutoCycle3D();
+                return;
+            }
+            document.getElementById('btn-autocycle-3d').innerHTML = '<i class="fa-solid fa-pause"></i><span>Detener Ciclo</span>';
+            let dir = 1;
+            let val = parseInt(document.getElementById('slider-3d').value, 10);
+            autoCycleInterval = setInterval(() => {
+                val += dir * 2;
+                if (val >= 100) { val = 100; dir = -1; }
+                if (val <= 0) { val = 0; dir = 1; }
+                update3DSimulation(val);
+            }, 55);
+        }
+
+        // ------------------------------------------------------------------
+        // 4. BISOCIACIÓN CREATIVA INTERACTION
+        // ------------------------------------------------------------------
+        const bisoContent = {
+            1: {
+                tag: 'MARCO MENTAL 01 // CALISTENIA ADAPTADA',
+                title: 'Barras y Fuerza Corporal llevadas al Agua',
+                desc: 'Tomamos la filosofía de la calistenia —dominar el propio cuerpo mediante barras paralelas y tracciones— y eliminamos la barrera de la gravedad extrema sumergiendo la estación.'
+            },
+            2: {
+                tag: 'MARCO MENTAL 02 // HIDROCINESITERAPIA («PONYO»)',
+                title: 'El Agua como Medio de Libertad Neurológica',
+                desc: 'Inspirados en la fluidez acuática y la rehabilitación motora, aprovechamos la reducción de impacto y la relajación muscular para transformar la terapia en disfrute.'
+            },
+            3: {
+                tag: 'MARCO MENTAL 03 // ROBÓTICA ASISTIVA',
+                title: '«Escalera al Cielo»: El Puente Tecnológico',
+                desc: 'Fusionamos una silla ergonómica con una plataforma sumergible y escalera automática, logrando que el ingreso y egreso del agua sea 100% seguro, suave y autónomo.'
+            }
+        };
+
+        function activateBisoNode(id) {
+            [1, 2, 3].forEach(n => {
+                const el = document.getElementById(`biso-node-${n}`);
+                if (n === id) {
+                    el.classList.add('border-biocian', 'ring-1', 'ring-biocian/50');
+                } else {
+                    el.classList.remove('border-biocian', 'ring-1', 'ring-biocian/50');
+                }
+            });
+            document.getElementById('biso-output-tag').textContent = bisoContent[id].tag;
+            document.getElementById('biso-output-title').textContent = bisoContent[id].title;
+            document.getElementById('biso-output-desc').textContent = bisoContent[id].desc;
+        }
+
+        function triggerFullFusionAnimation() {
+            [1, 2, 3].forEach(n => {
+                document.getElementById(`biso-node-${n}`).classList.add('border-biocian', 'ring-1', 'ring-biocian/50');
+            });
+            document.getElementById('biso-output-tag').textContent = 'SÍNTESIS FINAL // BISOCIACIÓN COMPLETA';
+            document.getElementById('biso-output-title').textContent = 'CALISPONYO: Tecnología que Emerge con Vos';
+            document.getElementById('biso-output-desc').textContent = 'La unión perfecta entre Calistenia + Agua + Mecatrónica Asistiva. Un ecosistema que devuelve la autonomía y abre las puertas del deporte acuático a todas las capacidades motrices.';
+        }
+
+        // ------------------------------------------------------------------
+        // 5. CATÁLOGO DE PROTOCOLOS DE CALISTENIA ACUÁTICA
+        // ------------------------------------------------------------------
+        const protocolsData = {
+            neuro: [
+                {
+                    code: 'MOD-N01',
+                    title: 'Tracción Asistida en Silla Postural',
+                    metric: '-85% Carga Axial',
+                    desc: 'El usuario realiza ejercicios de tracción escapular sentado de forma segura en la plataforma sumergida, estimulando el control motor sin riesgo de caída.'
+                },
+                {
+                    code: 'MOD-N02',
+                    title: 'Flotación Neurológica Guiada',
+                    metric: 'Relajación Muscular',
+                    desc: 'El soporte ergonómico permite liberar la rigidez y espasticidad en miembros inferiores mientras se sostiene de las barras perimetrales.'
+                },
+                {
+                    code: 'MOD-N03',
+                    title: 'Bipedestación Progresiva en Agua',
+                    metric: 'Equilibrio Propioceptivo',
+                    desc: 'Con la plataforma regulada a la altura del pecho, el usuario practica ponerse de pie asistido por las barras paralelas y el empuje hidrostático.'
+                }
+            ],
+            movilidad: [
+                {
+                    code: 'MOD-M01',
+                    title: 'Fondos en Paralelas Subacuáticas',
+                    metric: 'Cero Dolor Articular',
+                    desc: 'Fortalecimiento de tríceps, pectorales y cintura escapular aprovechando la flotabilidad para asistir el ascenso en cada repetición.'
+                },
+                {
+                    code: 'MOD-M02',
+                    title: 'Marcha y Escalón Automatizado',
+                    metric: 'Reeducación de Marcha',
+                    desc: 'Uso de los peldaños sumergibles a alturas personalizadas para recuperar patrones de subida y bajada de escaleras sin impacto.'
+                },
+                {
+                    code: 'MOD-M03',
+                    title: 'Remo Hidrodinámico',
+                    metric: 'Resistencia 360°',
+                    desc: 'Tracciones horizontales en barra frontal donde el agua actúa como resistencia isocinética natural y segura.'
+                }
+            ],
+            avanzado: [
+                {
+                    code: 'MOD-F01',
+                    title: 'Dominadas y Suspensión en Pórtico',
+                    metric: 'Fuerza de Tracción',
+                    desc: 'El arco superior de la «Escalera al Cielo» permite ejecutar dominadas asistidas por el agua y ejercicios de descompresión vertebral.'
+                },
+                {
+                    code: 'MOD-F02',
+                    title: 'L-Sit y Core en Ingravidez',
+                    metric: 'Estabilidad Central',
+                    desc: 'Elevaciones de piernas en barras paralelas venciendo la resistencia viscosa del agua para un trabajo abdominal intenso y seguro.'
+                },
+                {
+                    code: 'MOD-F03',
+                    title: 'Impulso Pliométrico Acuático',
+                    metric: 'Potencia sin Impacto',
+                    desc: 'Saltos y empujes controlados desde la plataforma antideslizante con amortiguación total en el aterrizaje.'
+                }
+            ]
+        };
+
+        function renderWorkoutProtocol(key) {
+            ['neuro', 'movilidad', 'avanzado'].forEach(k => {
+                const btn = document.getElementById(`proto-btn-${k}`);
+                if (k === key) {
+                    btn.className = 'px-4 py-2.5 rounded-xl bg-biocian text-abyss-950 font-display font-bold text-xs uppercase tracking-wider transition';
+                } else {
+                    btn.className = 'px-4 py-2.5 rounded-xl bento-card text-slate-300 hover:text-white font-display font-bold text-xs uppercase tracking-wider transition';
+                }
+            });
+
+            const grid = document.getElementById('protocol-cards-grid');
+            grid.innerHTML = protocolsData[key].map(item => `
+                <div class="bento-card rounded-3xl p-7 flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-xs text-biocian px-2.5 py-1 rounded-md bg-biocian/10 border border-biocian/30">${item.code}</span>
+                            <span class="font-mono text-xs text-biocian-mint">${item.metric}</span>
+                        </div>
+                        <h3 class="font-display font-bold text-xl text-white">${item.title}</h3>
+                        <p class="text-sm text-slate-300 leading-relaxed">${item.desc}</p>
+                    </div>
+                    <div class="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+                        <span>Adaptado a «Escalera al Cielo»</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-biocian"></i>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ------------------------------------------------------------------
+        // 6. MODO DIRECTOR DE VIDEO PITCH DE 30 SEGUNDOS (AUTO-GUIADO)
+        // ------------------------------------------------------------------
+        let pitchTimer = null;
+        let pitchSec = 0;
+
+        const pitchTimeline = [
+            {
+                start: 0, end: 7,
+                scene: 'ESCENA 1/4 // EL PROBLEMA REAL (00:00 - 00:07)',
+                script: '"La hidroterapia sana, pero para muchas personas con desafíos motrices, entrar al agua es una barrera imposible."',
+                action: () => {
+                    document.getElementById('gemelo-3d').scrollIntoView({ behavior: 'smooth' });
+                    setCameraAngle('side');
+                    update3DSimulation(0);
+                }
+            },
+            {
+                start: 7, end: 15,
+                scene: 'ESCENA 2/4 // LA BISOCIACIÓN CREATIVA (00:07 - 00:15)',
+                script: '"En CALISPONYO unimos la calistenia con la tecnología asistiva para crear inclusión en movimiento."',
+                action: () => {
+                    setCameraAngle('iso');
+                    update3DSimulation(45);
+                }
+            },
+            {
+                start: 15, end: 23,
+                scene: 'ESCENA 3/4 // PRODUCTO ESTRELLA: ESCALERA AL CIELO (00:15 - 00:23)',
+                script: '"Presentamos «Escalera al Cielo»: una plataforma con silla sumergible y escalera automática que devuelve la autonomía."',
+                action: () => {
+                    setCameraAngle('front');
+                    update3DSimulation(100);
+                }
+            },
+            {
+                start: 23, end: 30,
+                scene: 'ESCENA 4/4 // CIERRE & IMPACTO (00:23 - 00:30)',
+                script: '"CALISPONYO: tecnología que emerge con vos. Presentado por Grupo Tres Generaciones."',
+                action: () => {
+                    setCameraAngle('iso');
+                }
+            }
+        ];
+
+        function startCinematicPitch() {
+            stopAutoCycle3D();
+            if (pitchTimer) clearInterval(pitchTimer);
+            pitchSec = 0;
+
+            const hud = document.getElementById('cinematic-pitch-hud');
+            hud.classList.remove('hidden');
+
+            runPitchSecond();
+            pitchTimer = setInterval(() => {
+                pitchSec++;
+                if (pitchSec > 30) {
+                    clearInterval(pitchTimer);
+                    pitchTimer = null;
+                    return;
+                }
+                runPitchSecond();
+            }, 1000);
+        }
+
+        function runPitchSecond() {
+            const pct = (pitchSec / 30) * 100;
+            document.getElementById('pitch-hud-bar').style.width = `${pct}%`;
+            document.getElementById('pitch-hud-timer').textContent = `00:${String(pitchSec).padStart(2, '0')} / 00:30`;
+
+            const currentStage = pitchTimeline.find(s => pitchSec >= s.start && pitchSec < s.end) || pitchTimeline[3];
+            document.getElementById('pitch-hud-scene').textContent = currentStage.scene;
+            document.getElementById('pitch-hud-script').textContent = currentStage.script;
+
+            // Trigger 3D camera & immersion choreography at the start of each scene
+            pitchTimeline.forEach(s => {
+                if (pitchSec === s.start) s.action();
+            });
+        }
+
+        function stopCinematicPitch() {
+            if (pitchTimer) clearInterval(pitchTimer);
+            pitchTimer = null;
+            document.getElementById('cinematic-pitch-hud').classList.add('hidden');
+        }
+
+        // Initialize everything on load
+        window.onload = function () {
+            initThreeJS();
+            update3DSimulation(0);
+            renderWorkoutProtocol('neuro');
+        };
+    </script>
+</body>
+</html>
