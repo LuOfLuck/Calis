@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { DigitalTwin3D } from './components/DigitalTwin3D';
 import { BisociacionLab } from './components/BisociacionLab';
 import { WorkoutProtocols } from './components/WorkoutProtocols';
 import { TeamAndStory } from './components/TeamAndStory';
-import { PitchDirectorHUD, PITCH_TIMELINE } from './components/PitchDirectorHUD';
 import { WaterCausticsCanvas } from './components/WaterCausticsCanvas';
 import { useScrollReveal } from './hooks/useScrollReveal';
 
@@ -12,12 +11,7 @@ export default function App() {
   useScrollReveal();
 
   const [immersion3D, setImmersion3D] = useState<number>(0);
-  const [cameraPreset3D, setCameraPreset3D] = useState<'iso' | 'side' | 'front'>('iso');
-
-  // Video Pitch 30s Guided Mode State
-  const [isPitchActive, setIsPitchActive] = useState<boolean>(false);
-  const [pitchSeconds, setPitchSeconds] = useState<number>(0);
-  const pitchTimerRef = useRef<number | null>(null);
+  const [cameraPreset3D] = useState<'iso' | 'side' | 'front'>('iso');
 
   // Smooth scroll to section
   const scrollToSection = (id: string) => {
@@ -26,7 +20,7 @@ export default function App() {
     el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // 1. Mouse Spotlight tracking for Bento Cards and Caustic Background (rAF-batched, zero layout thrashing)
+  // Mouse Spotlight tracking for Bento Cards and Caustic Background (rAF-batched, zero layout thrashing)
   useEffect(() => {
     let rafId = 0;
     let latestX = 0;
@@ -63,62 +57,10 @@ export default function App() {
     };
   }, []);
 
-  // 2. Pitch 30s Guided Director Lifecycle
-  const startPitch = () => {
-    if (pitchTimerRef.current) clearInterval(pitchTimerRef.current);
-    setIsPitchActive(true);
-    setPitchSeconds(0);
-
-    // Initial stage action
-    scrollToSection('gemelo-3d');
-    setCameraPreset3D('side');
-    setImmersion3D(0);
-
-    pitchTimerRef.current = window.setInterval(() => {
-      setPitchSeconds((prev) => {
-        const next = prev + 1;
-        if (next > 30) {
-          if (pitchTimerRef.current) clearInterval(pitchTimerRef.current);
-          setIsPitchActive(false);
-          return 0;
-        }
-
-        // Trigger choreography on scene transitions
-        const stage = PITCH_TIMELINE.find((s) => s.start === next);
-        if (stage) {
-          scrollToSection(stage.targetSection);
-          setCameraPreset3D(stage.camera);
-          setImmersion3D(stage.immersion);
-        }
-
-        return next;
-      });
-    }, 1000);
-  };
-
-  const stopPitch = () => {
-    if (pitchTimerRef.current) clearInterval(pitchTimerRef.current);
-    setIsPitchActive(false);
-    setPitchSeconds(0);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (pitchTimerRef.current) clearInterval(pitchTimerRef.current);
-    };
-  }, []);
-
   return (
     <div className="caustic-bg min-h-screen text-slate-900 relative selection:bg-[#00f2fe] selection:text-slate-900 w-full max-w-full">
       {/* Ambient Water Caustics & Bubbles Canvas */}
       <WaterCausticsCanvas />
-
-      {/* Pitch Director HUD Overlay */}
-      <PitchDirectorHUD
-        isActive={isPitchActive}
-        onClose={stopPitch}
-        seconds={pitchSeconds}
-      />
 
       {/* =========================================================================
           NIVEL 01: HERO SECTION - EXACT REPLICA OF REFERENCE MOCKUP
@@ -215,7 +157,7 @@ export default function App() {
           ========================================================================= */}
       <section id="equipo-historia" className="relative min-h-screen w-full flex flex-col justify-center py-16 sm:py-20 z-10 border-t border-slate-200/80 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-w-0 my-auto">
-          <TeamAndStory onStartPitch={startPitch} />
+          <TeamAndStory />
         </div>
       </section>
 

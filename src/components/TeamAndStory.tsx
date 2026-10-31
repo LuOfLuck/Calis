@@ -1,11 +1,7 @@
 import React from 'react';
-import { Quote, Play } from 'lucide-react';
+import { Quote } from 'lucide-react';
 
-interface TeamAndStoryProps {
-  onStartPitch: () => void;
-}
-
-export const TeamAndStory: React.FC<TeamAndStoryProps> = ({ onStartPitch }) => {
+export const TeamAndStory: React.FC = () => {
   return (
     <div className="space-y-16 sm:space-y-20 w-full min-w-0">
       {/* ================= BENTO GRID: EL ORIGEN Y LA MISIÓN ================= */}
@@ -95,77 +91,54 @@ export const TeamAndStory: React.FC<TeamAndStoryProps> = ({ onStartPitch }) => {
 
       {/* ================= EQUIPO "GRUPO TRES GENERACIONES" ================= */}
       <div id="equipo" className="pt-10 border-t border-slate-200 w-full min-w-0">
-        <div className="grid lg:grid-cols-12 gap-8 items-center w-full min-w-0">
-          {/* Team Members (8 Cols) */}
-          <div className="lg:col-span-8 space-y-6 w-full min-w-0">
-            <div className="reveal-left">
-              <span className="font-mono text-xs text-[#0891b2] font-semibold uppercase tracking-widest">
-                FICHA TÉCNICA CONCEPTUAL // INTEGRANTES
-              </span>
-              <h2 className="font-['Syne'] font-extrabold text-2xl sm:text-4xl md:text-5xl text-slate-900 mt-2">
-                GRUPO TRES GENERACIONES
-              </h2>
-              <p className="text-slate-500 text-sm mt-1 font-['Plus_Jakarta_Sans']">
-                Taller IHeCSI 2026 Edición Especial — Práctica de Bisociación Creativa.
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-4 w-full min-w-0">
-              {/* Adriana */}
-              <div className="bento-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm reveal-up delay-75">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center font-['Syne'] font-bold text-[#0284c7]">
-                    AA
-                  </span>
-                </div>
-                <h3 className="font-['Syne'] font-bold text-base text-slate-900">Adriana Antonuccio</h3>
-              </div>
-
-              {/* Ana Laura */}
-              <div className="bento-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm reveal-up delay-150">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center font-['Syne'] font-bold text-emerald-600">
-                    AL
-                  </span>
-                </div>
-                <h3 className="font-['Syne'] font-bold text-base text-slate-900">Ana Laura López Ado</h3>
-              </div>
-
-              {/* Lucas */}
-              <div className="bento-card rounded-2xl p-5 border border-slate-200 bg-white shadow-sm reveal-up delay-250">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center font-['Syne'] font-bold text-amber-600">
-                    LG
-                  </span>
-                </div>
-                <h3 className="font-['Syne'] font-bold text-base text-slate-900">Lucas Guerrero</h3>
-              </div>
-            </div>
+        <div className="space-y-8 w-full min-w-0">
+          <div className="reveal-left">
+            <span className="font-mono text-xs text-[#0891b2] font-semibold uppercase tracking-widest">
+              FICHA TÉCNICA CONCEPTUAL // INTEGRANTES
+            </span>
+            <h2 className="font-['Syne'] font-extrabold text-2xl sm:text-4xl md:text-5xl text-slate-900 mt-2">
+              GRUPO TRES GENERACIONES
+            </h2>
+            <p className="text-slate-500 text-sm mt-1 font-['Plus_Jakarta_Sans']">
+              Taller IHeCSI 2026 Edición Especial — Práctica de Bisociación Creativa.
+            </p>
           </div>
 
-          {/* Interactive QR & Deliverable Card (4 Cols) */}
-          <div className="lg:col-span-4 reveal-right delay-150">
-            <div className="bento-card rounded-3xl p-6 text-center space-y-4 border border-slate-200 bg-white shadow-sm">
-              <span className="font-mono text-[10px] text-[#0891b2] font-semibold uppercase tracking-widest block">
-                RECURSO DE COMUNICACIÓN PERSUASIVA
-              </span>
-              <h4 className="font-['Syne'] font-bold text-lg text-slate-900">CONOCÉ CALISPONYO</h4>
-              <p className="text-xs text-slate-500 font-['Plus_Jakarta_Sans']">
-                Experiencia web interactiva vinculada al código QR del Flyer y Ficha Técnica Conceptual.
-              </p>
-              <div className="pt-2 flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={onStartPitch}
-                  className="w-full py-3 rounded-xl bg-[#00d4ea] hover:bg-[#00f2fe] text-slate-900 font-['Syne'] font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#00f2fe]/20"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Reproducir Pitch 30s</span>
-                </button>
-                <div className="font-mono text-[11px] text-slate-500 bg-slate-50 py-2 px-3 rounded-xl border border-slate-200 truncate">
-                  BisociaciónCreativa-GrupoTresGeneraciones.pdf
-                </div>
+          <div className="grid sm:grid-cols-3 gap-6 w-full min-w-0">
+            {/* 1. Lucas */}
+            <div className="bento-card rounded-2xl p-6 border border-slate-200 bg-white shadow-sm flex flex-col items-center text-center reveal-up delay-75">
+              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-amber-200 shadow-md mb-4 bg-slate-100">
+                <img
+                  src="/assets/aistudio/20260924_140106_3cb0fd9a.jpg"
+                  alt="Lucas Guerrero"
+                  className="w-full h-full object-cover object-[center_20%]"
+                />
               </div>
+              <h3 className="font-['Syne'] font-bold text-lg text-slate-900">Lucas Guerrero</h3>
+            </div>
+
+            {/* 2. Adri */}
+            <div className="bento-card rounded-2xl p-6 border border-slate-200 bg-white shadow-sm flex flex-col items-center text-center reveal-up delay-150">
+              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-sky-200 shadow-md mb-4 bg-slate-100">
+                <img
+                  src="/assets/aistudio/IMG-20261030-WA0008_dcd26f57.jpg"
+                  alt="Adriana Antonuccio"
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+              <h3 className="font-['Syne'] font-bold text-lg text-slate-900">Adriana Antonuccio</h3>
+            </div>
+
+            {/* 3. Ana */}
+            <div className="bento-card rounded-2xl p-6 border border-slate-200 bg-white shadow-sm flex flex-col items-center text-center reveal-up delay-250">
+              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-emerald-200 shadow-md mb-4 bg-slate-100">
+                <img
+                  src="/assets/aistudio/IMG-20261029-WA0133_1d496b55.jpg"
+                  alt="Ana Laura López Ado"
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+              <h3 className="font-['Syne'] font-bold text-lg text-slate-900">Ana Laura López Ado</h3>
             </div>
           </div>
         </div>
